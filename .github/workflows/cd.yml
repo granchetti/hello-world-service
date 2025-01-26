@@ -1,0 +1,45 @@
+name: CI/CD Main
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Set version
+        id: version
+        run: |
+          echo "IMAGE_VERSION=0.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build & push Docker image
+        run: |
+          docker build -t myuser/hello-world-service:${{ steps.version.outputs.IMAGE_VERSION }} .
+          docker push myuser/hello-world-service:${{ steps.version.outputs.IMAGE_VERSION }}
