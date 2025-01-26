@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 jobs:
-  setup:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -27,56 +27,66 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Save workspace
-        uses: actions/upload-artifact@v3
-        with:
-          name: workspace
-          path: .
-
-  lint:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Restore workspace
-        uses: actions/download-artifact@v3
-        with:
-          name: workspace
-
       - name: Lint
         run: npm run lint
 
   unit-tests:
     runs-on: ubuntu-latest
-    needs: setup
+    needs: [lint]
     steps:
-      - name: Restore workspace
-        uses: actions/download-artifact@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
-          name: workspace
+          node-version: 18
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Unit tests
         run: npm run test:unit
 
   integration-tests:
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: [unit-tests]
     steps:
-      - name: Restore workspace
-        uses: actions/download-artifact@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
-          name: workspace
+          node-version: 18
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Build Docker image (local tag)
-        run: |
-          docker build -t hello-world-service:local .
+        run: docker build -t hello-world-service:local .
 
       - name: Run container for integration tests
-        run: |
-          docker run -d --name integration -p 3000:3000 hello-world-service:local
+        run: docker run -d --name integration -p 3000:3000 hello-world-service:local
 
       - name: Integration tests
-        run: |
-          npm run test:integration
+        run: npm run test:integration
 
       - name: Stop container
         run: |
@@ -85,12 +95,10 @@ jobs:
 
   build-and-push:
     runs-on: ubuntu-latest
-    needs: integration-tests
+    needs: [integration-tests]
     steps:
-      - name: Restore workspace
-        uses: actions/download-artifact@v3
-        with:
-          name: workspace
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
