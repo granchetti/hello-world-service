@@ -2,7 +2,7 @@ name: CI/CD Main
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build-and-push:
@@ -18,15 +18,32 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-      
+
       - name: Lint
         run: npm run lint
 
       - name: Unit tests
-        run: npm run test
+        run: npm run test:unit
 
       - name: Build
         run: npm run build
+
+      - name: Build Docker image (local tag)
+        run: |
+          docker build -t hello-world-service:local .
+
+      - name: Run container for integration tests
+        run: |
+          docker run -d --name integration -p 3000:3000 hello-world-service:local
+
+      - name: Integration tests
+        run: |
+          npm run test:integration
+
+      - name: Stop container
+        run: |
+          docker stop integration
+          docker rm integration
 
       - name: Set version
         id: version
