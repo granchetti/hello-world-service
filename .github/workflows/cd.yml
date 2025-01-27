@@ -140,8 +140,7 @@ jobs:
 
       - name: Update image in deployment.yaml
         run: |
-          # Sustituye la imagen en tu YAML con la versión generada
-          sed -i "s|granchetti/hello-world-service:.*|granchetti/hello-world-service:${{ steps.version.outputs.IMAGE_VERSION }}|g" hello-deployment.yaml
+          sed -i "s|granchetti/hello-world-service:.*|granchetti/hello-world-service:${{ steps.version.outputs.IMAGE_VERSION }}|g" ${{ github.workspace }}/kubernetes/deployment.yaml
 
       - name: Apply the manifests
         run: |
