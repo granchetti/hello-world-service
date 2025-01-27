@@ -144,8 +144,8 @@ jobs:
 
       - name: Apply the manifests
         run: |
-          kubectl apply -f hello-deployment.yaml
-          kubectl apply -f hello-service.yaml
+          kubectl apply -f kubernetes/deployment.yaml
+          kubectl apply -f kubernetes/service.yaml
 
       - name: Wait for rollout
         run: |
