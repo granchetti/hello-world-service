@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: hello-world
-          image: granchetti/hello-world-service:0.0.5
+          image: granchetti/hello-world-service:latest
           ports:
-            - containerPort: 8080
+            - containerPort: 3000
       imagePullSecrets:
         - name: dockerhub-secret

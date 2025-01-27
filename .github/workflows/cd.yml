@@ -149,6 +149,6 @@ jobs:
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/hello-deployment --timeout=90s
+          kubectl rollout status deployment/hello-world --timeout=90s
           LB=$(kubectl get svc hello-world-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "Service is at http://$LB"
