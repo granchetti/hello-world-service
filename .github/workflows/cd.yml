@@ -106,15 +106,55 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Set version
-        id: version
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Semantic Release
+        id: semantic_release
         run: |
-          echo "IMAGE_VERSION=0.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+          npx semantic-release --dry-run | grep "Release version" | awk '{print $NF}' > version.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract version
+        id: extract_version
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
 
       - name: Build & push Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ steps.version.outputs.IMAGE_VERSION }} .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ steps.version.outputs.IMAGE_VERSION }}
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ env.VERSION }} .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ env.VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name hello-world-eks --region eu-west-1
+
+      - name: Update image in deployment.yaml
+        run: |
+          sed -i "s|granchetti/hello-world-service:.*|granchetti/hello-world-service:${{ env.VERSION }}|g" ${{ github.workspace }}/kubernetes/deployment.yaml
+
+      - name: Apply the manifests
+        run: |
+          kubectl apply -f kubernetes/deployment.yaml
+          kubectl apply -f kubernetes/service.yaml
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/hello-world --timeout=90s
+          LB=$(kubectl get svc hello-world-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "Service is at http://$LB"
 
   deploy:
     runs-on: ubuntu-latest
