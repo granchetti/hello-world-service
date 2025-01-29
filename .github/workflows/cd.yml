@@ -14,7 +14,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -40,7 +40,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -66,7 +66,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -109,7 +109,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install dependencies
         run: npm install
@@ -117,17 +117,25 @@ jobs:
       - name: Run Semantic Release
         id: semantic_release
         run: |
-          npx semantic-release --dry-run | grep "Release version" | awk '{print $NF}' > version.txt
+          VERSION=$(npx semantic-release --dry-run | grep -oP "The next release version is \K[0-9]+\.[0-9]+\.[0-9]+")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Extract version
-        id: extract_version
-        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+      - name: Validate version
+        run: |
+          if [[ -z "${{ env.VERSION }}" ]]; then
+            echo "Error: VERSION is empty. Semantic Release might not have generated a new version."
+            exit 1
+          fi
 
       - name: Build & push Docker image
         run: |
+          if [[ -z "${{ env.VERSION }}" ]]; then
+            echo "Error: VERSION is empty!"
+            exit 1
+          fi
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ env.VERSION }} .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ env.VERSION }}
 
@@ -175,12 +183,11 @@ jobs:
 
       - name: Set version
         id: version
-        run: |
-          echo "IMAGE_VERSION=0.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+        run: echo "IMAGE_VERSION=${{ needs.build-and-push.outputs.VERSION }}" >> $GITHUB_ENV
 
       - name: Update image in deployment.yaml
         run: |
-          sed -i "s|granchetti/hello-world-service:.*|granchetti/hello-world-service:${{ steps.version.outputs.IMAGE_VERSION }}|g" ${{ github.workspace }}/kubernetes/deployment.yaml
+          sed -i "s|granchetti/hello-world-service:.*|granchetti/hello-world-service:${{ env.IMAGE_VERSION }}|g" ${{ github.workspace }}/kubernetes/deployment.yaml
 
       - name: Apply the manifests
         run: |
