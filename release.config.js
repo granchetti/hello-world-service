@@ -1,5 +1,6 @@
 module.exports = {
   branches: ["main"],
+  verifyConditions: ["@semantic-release/github"],
   plugins: [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
