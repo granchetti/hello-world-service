@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/granchetti/hello-world-service/compare/v2.1.0...v2.2.0) (2025-01-30)
+
+
+### Features
+
+* fix tests ([e810b56](https://github.com/granchetti/hello-world-service/commit/e810b56f5d4d5763b5b597c95f46e7265140cd46))
+
 # [2.1.0](https://github.com/granchetti/hello-world-service/compare/v2.0.0...v2.1.0) (2025-01-30)
 
 
