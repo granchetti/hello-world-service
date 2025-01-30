@@ -15,9 +15,9 @@ afterAll(() => {
 });
 
 describe("Integration tests", () => {
-  it("GET / - should return Hello Magic People!", async () => {
+  it("GET / - should return Hello People!", async () => {
     const response = await request("http://localhost:4000").get("/");
     expect(response.status).toBe(200);
-    expect(response.text).toBe("Hello Magic People!");
+    expect(response.text).toBe("Hello People!");
   });
 });
