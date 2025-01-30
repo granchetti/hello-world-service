@@ -1,3 +1,13 @@
+# [1.0.0](https://github.com/granchetti/hello-world-service/compare/v0.1.0...v1.0.0) (2025-01-30)
+
+
+* featchange main function ([8954f5d](https://github.com/granchetti/hello-world-service/commit/8954f5d762d2ffbe7cf84536e10f827fc301a73b))
+
+
+### BREAKING CHANGES
+
+* The message changed from 'Hello World!' to 'Hello Magic People!'
+
 # [0.1.0](https://github.com/granchetti/hello-world-service/compare/v0.0.0...v0.1.0) (2025-01-30)
 
 
