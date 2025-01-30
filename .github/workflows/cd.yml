@@ -101,8 +101,9 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     needs: [integration-tests]
+
     outputs:
-      VERSION: ${{ steps.semantic_release.outputs.VERSION }}
+      VERSION: ${{ steps.set_job_output.outputs.VERSION }}
 
     steps:
       - name: Checkout repo
@@ -122,24 +123,26 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run Semantic Release
+      - name: Run Semantic Release (dry-run)
         id: semantic_release
         run: |
-          npx semantic-release
+          VERSION=$(npx semantic-release --dry-run | grep -oP "The next release version is \K[0-9]+\.[0-9]+\.[0-9]+")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version
-        if: success()
+      - name: Validate version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Extracted version: ${VERSION}"
+          if [[ -z "${{ env.VERSION }}" ]]; then
+            echo "Error: VERSION is empty. Semantic Release might not have generated a new version."
+            exit 1
+          fi
 
       - name: Build & push Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ steps.semantic_release.outputs.VERSION }} .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ steps.semantic_release.outputs.VERSION }}
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ env.VERSION }} .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-world-service:${{ env.VERSION }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -158,12 +161,13 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name hello-world-eks --region eu-west-1
 
-      - name: Set version from build-and-push
-        run: |
-          echo "IMAGE_VERSION=${{ needs.build-and-push.outputs.VERSION }}" >> $GITHUB_ENV
+      - name: Set version
+        id: version
+        run: echo "IMAGE_VERSION=${{ needs.build-and-push.outputs.VERSION }}" >> $GITHUB_ENV
 
       - name: Update image in deployment.yaml
         run: |
+          # Igual que antes, sustituye "granchetti" si es necesario
           sed -i "s|granchetti/hello-world-service:.*|granchetti/hello-world-service:${{ env.IMAGE_VERSION }}|g" ${{ github.workspace }}/kubernetes/deployment.yaml
 
       - name: Apply the manifests
