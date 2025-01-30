@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hello-world
-          image: granchetti/hello-world-service:${IMAGE_VERSION}
+          image: granchetti/hello-world-service:${VERSION}
           ports:
             - containerPort: 3000
       imagePullSecrets:
