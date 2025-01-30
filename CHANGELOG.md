@@ -1,3 +1,11 @@
+# [2.1.0](https://github.com/granchetti/hello-world-service/compare/v2.0.0...v2.1.0) (2025-01-30)
+
+
+### Features
+
+* update welcome message ([9af46a5](https://github.com/granchetti/hello-world-service/commit/9af46a5199cc965d86bda7c89211e12834ac0463))
+* update welcome message ([fb9987f](https://github.com/granchetti/hello-world-service/commit/fb9987fba3e1ed5d9f7031ee354b822a7832df91))
+
 # [2.0.0](https://github.com/granchetti/hello-world-service/compare/v1.0.0...v2.0.0) (2025-01-30)
 
 
