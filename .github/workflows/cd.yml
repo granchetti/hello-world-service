@@ -126,15 +126,19 @@ jobs:
       - name: Run Semantic Release
         id: semantic_release
         run: |
-          VERSION=$(npx semantic-release --branches main --json | jq -r .nextRelease.version)
-          if [ "$VERSION" == "null" ] || [ -z "$VERSION" ]; then
-            echo "No new version generated."
+          OUTPUT=$(npx semantic-release --branches main --json || echo "{}")
+          VERSION=$(echo "$OUTPUT" | jq -r '.nextRelease.version // empty')
+
+          if [ -z "$VERSION" ]; then
+            echo "No new version generated. Exiting without error."
             exit 0
           fi
+
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Extracted version: $VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Validate version
         run: |
